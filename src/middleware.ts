@@ -1,6 +1,6 @@
-import { type NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export async function middleware() {
   // Completely disable middleware for now - handle everything client-side
   return NextResponse.next()
 }
