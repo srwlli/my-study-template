@@ -83,11 +83,18 @@ This is a sophisticated React application built with Next.js 15.5.3 that serves 
    - **Solution**: Moved sidebar from `ui/` to `layout/` folder, updated all imports
    - **Pattern**: Components organized by purpose (layout/ vs ui/)
 
-4. **Mobile Hydration Error** (September 15) - MOST RECENT
+4. **Mobile Hydration Error** (September 15)
    - **Problem**: Hydration mismatches on mobile due to browser autofill behavior
    - **Solution**: Implemented mounted state pattern with proper autocomplete attributes
    - **Files**: `src/components/auth/login-form.tsx`
    - **Technical**: Added `suppressHydrationWarning` and loading skeleton
+
+5. **Vercel Deployment Build Failures** (September 15) - MOST RECENT
+   - **Problem**: Build failing on Vercel due to missing Supabase environment variables
+   - **Root Cause**: Supabase client throwing errors at module load time when env vars missing
+   - **Solution**: Implemented graceful fallback handling for missing configuration
+   - **Files**: `src/lib/supabase.ts`, `src/lib/auth-context.tsx`
+   - **Technical**: Added placeholder values for build-time and `isSupabaseConfigured()` check
 
 ### Development Patterns Established
 
@@ -96,6 +103,8 @@ This is a sophisticated React application built with Next.js 15.5.3 that serves 
 3. **Mobile-First**: Always test mobile responsiveness and hydration
 4. **Import Paths**: Use `@/` alias, organize imports by purpose
 5. **Error Handling**: Comprehensive error boundaries and loading states
+6. **Environment Configuration**: Graceful fallbacks for missing environment variables
+7. **Build Safety**: Ensure build succeeds even without external service configuration
 
 ## Current User Experience
 
@@ -139,7 +148,8 @@ npm run lint     # ESLint checking
 ```
 
 ### 📁 Key Files To Know
-- `src/lib/auth-context.tsx` - Authentication state management
+- `src/lib/auth-context.tsx` - Authentication state management with graceful fallbacks
+- `src/lib/supabase.ts` - Supabase client with build-safe configuration
 - `src/components/layout/sidebar.tsx` - Main navigation component
 - `src/components/layout/header.tsx` - Header with breadcrumbs
 - `src/app/dashboard/settings/page.tsx` - Settings page
@@ -152,6 +162,8 @@ npm run lint     # ESLint checking
 3. Test mobile hydration when adding new forms/interactive components
 4. Follow existing import patterns and component organization
 5. Don't add components to ui/ folder unless they're truly reusable UI primitives
+6. Never throw errors at module load time for missing environment variables
+7. Always provide graceful fallbacks for external service configurations
 
 ## Next Steps & Future Development
 

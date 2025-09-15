@@ -161,10 +161,26 @@ export interface AuthState {
 ```typescript
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Create a client with fallback values for build-time
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key',
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  }
+)
+
+// Export a function to check if Supabase is properly configured
+export const isSupabaseConfigured = () => {
+  return !!(supabaseUrl && supabaseAnonKey)
+}
 ```
 
 **src/lib/auth-context.tsx:**
@@ -172,7 +188,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 'use client'
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { supabase } from './supabase'
+import { supabase, isSupabaseConfigured } from './supabase'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { User, AuthState } from '@/types/auth'
 
@@ -183,6 +199,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Skip auth initialization if Supabase is not configured
+    if (!isSupabaseConfigured()) {
+      setLoading(false)
+      return
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ? {
@@ -211,11 +233,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase is not configured')
+    }
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
   }
 
   const signUp = async (email: string, password: string, fullName: string) => {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase is not configured')
+    }
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -229,11 +257,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase is not configured')
+    }
     const { error } = await supabase.auth.signOut()
     if (error) throw error
   }
 
   const resetPassword = async (email: string) => {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase is not configured')
+    }
     const { error } = await supabase.auth.resetPasswordForEmail(email)
     if (error) throw error
   }
@@ -271,7 +305,7 @@ export function useAuth() {
 
 import * as React from "react"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
-import { type ThemeProviderProps } from "next-themes/dist/types"
+import { type ThemeProviderProps } from "next-themes"
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return <NextThemesProvider {...props}>{children}</NextThemesProvider>
@@ -1076,6 +1110,47 @@ export default function SettingsPage() {
   )
 }
 ```
+
+---
+
+## Phase 6: Deployment & Environment Configuration ✅
+
+### Step 6.1: Vercel Deployment Setup
+
+The project includes graceful fallback handling for missing environment variables, allowing successful builds even without Supabase configuration.
+
+#### Environment Variables for Production
+For full functionality, add these environment variables to your Vercel project:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+#### Adding Environment Variables in Vercel
+1. Go to your project dashboard on Vercel
+2. Navigate to Settings > Environment Variables
+3. Add the two Supabase environment variables
+4. Redeploy the project
+
+#### Build Safety Features
+The project includes several build-safe configurations:
+
+1. **Graceful Supabase Fallbacks**: Uses placeholder values during build time
+2. **Configuration Checks**: `isSupabaseConfigured()` function prevents runtime errors
+3. **Environment Detection**: Skips auth initialization when variables are missing
+4. **Error Handling**: Proper error messages for missing configuration
+
+#### Testing Deployment
+```powershell
+# Test build locally to ensure it passes
+pnpm run build
+
+# Deploy to Vercel (will build successfully even without env vars)
+vercel --prod
+```
+
+**Note**: The app will build and deploy successfully without environment variables, but authentication features will be disabled until proper Supabase configuration is added.
 
 ---
 

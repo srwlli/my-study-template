@@ -295,6 +295,105 @@ pnpm build
 
 ---
 
+## Deployment Errors
+
+### ❌ Error: "Missing Supabase environment variables" during Vercel build
+
+**Symptoms:**
+```
+Error: Missing Supabase environment variables
+Error occurred prerendering page "/_not-found"
+Export encountered an error on /_not-found/page: /_not-found, exiting the build.
+```
+
+**Root Cause:**
+Supabase client throwing errors at module load time when environment variables are missing on Vercel deployment.
+
+**Solution:**
+Update Supabase configuration to handle missing environment variables gracefully:
+
+```typescript
+// src/lib/supabase.ts
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+
+// Create a client with fallback values for build-time
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key',
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  }
+)
+
+// Export a function to check if Supabase is properly configured
+export const isSupabaseConfigured = () => {
+  return !!(supabaseUrl && supabaseAnonKey)
+}
+```
+
+```typescript
+// src/lib/auth-context.tsx
+useEffect(() => {
+  // Skip auth initialization if Supabase is not configured
+  if (!isSupabaseConfigured()) {
+    setLoading(false)
+    return
+  }
+  // ... rest of auth initialization
+}, [])
+
+const signIn = async (email: string, password: string) => {
+  if (!isSupabaseConfigured()) {
+    throw new Error('Supabase is not configured')
+  }
+  // ... rest of signIn logic
+}
+```
+
+**Environment Variables for Production:**
+Add these to your Vercel project settings:
+```
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+**Prevention:**
+- Never throw errors at module load time for missing environment variables
+- Always provide graceful fallbacks for external service configurations
+- Test build locally without environment variables to ensure it passes
+
+---
+
+### ❌ Error: "Cannot find module 'next-themes/dist/types'"
+
+**Symptoms:**
+```
+Type error: Cannot find module 'next-themes/dist/types' or its corresponding type declarations.
+```
+
+**Root Cause:**
+Incorrect import path for next-themes TypeScript types.
+
+**Solution:**
+```typescript
+// Change from:
+import { type ThemeProviderProps } from "next-themes/dist/types"
+
+// To:
+import { type ThemeProviderProps } from "next-themes"
+```
+
+**Prevention:**
+- Use main package import paths instead of internal dist paths
+- Check package documentation for correct import patterns
+
+---
+
 ## Quick Diagnostic Commands
 
 ```powershell
