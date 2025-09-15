@@ -35,7 +35,7 @@ This is a sophisticated React application built with Next.js 15.5.3 that serves 
    - Mobile-responsive sidebar that auto-closes
 
 3. **Settings & Theming**
-   - Comprehensive settings page at `/dashboard/settings`
+   - Simplified settings page at `/dashboard/settings` (theme toggle + sign out)
    - Dark/light/system theme switching with next-themes
    - Theme persistence across sessions
 
@@ -89,12 +89,19 @@ This is a sophisticated React application built with Next.js 15.5.3 that serves 
    - **Files**: `src/components/auth/login-form.tsx`
    - **Technical**: Added `suppressHydrationWarning` and loading skeleton
 
-5. **Vercel Deployment Build Failures** (September 15) - MOST RECENT
+5. **Vercel Deployment Build Failures** (September 15)
    - **Problem**: Build failing on Vercel due to missing Supabase environment variables
    - **Root Cause**: Supabase client throwing errors at module load time when env vars missing
    - **Solution**: Implemented graceful fallback handling for missing configuration
    - **Files**: `src/lib/supabase.ts`, `src/lib/auth-context.tsx`
    - **Technical**: Added placeholder values for build-time and `isSupabaseConfigured()` check
+
+6. **Settings Page Simplification** (September 15) - MOST RECENT
+   - **Change**: Simplified settings page to focus on essential features only
+   - **Removed**: Notifications card, Account management card, extra toggles
+   - **Kept**: Theme switching and sign out functionality
+   - **Files**: `src/app/dashboard/settings/page.tsx`
+   - **Result**: Cleaner, more focused settings interface
 
 ### Development Patterns Established
 

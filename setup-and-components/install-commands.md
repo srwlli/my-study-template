@@ -25,6 +25,9 @@ pnpm add lucide-react class-variance-authority clsx tailwind-merge
 # Step 6: Install authentication, data, and theming
 pnpm add @supabase/supabase-js @supabase/ssr @tanstack/react-query next-themes
 
+# Step 6.1: Install missing Radix UI dependencies for shadcn components
+pnpm add @radix-ui/react-slot @radix-ui/react-tooltip
+
 # Step 7: Initialize shadcn/ui (choose Neutral as base color when prompted)
 npx shadcn@latest init
 
@@ -150,17 +153,78 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ### src/middleware.ts (Disabled)
 ```typescript
 import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
 
-export function middleware(request: NextRequest) {
-  return NextResponse.next() // Disabled - using client-side auth
+export async function middleware() {
+  // Completely disable middleware for now - handle everything client-side
+  return NextResponse.next()
 }
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - api (API routes)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|api).*)',
   ],
 }
+```
+
+## Critical Configuration Examples
+
+### src/lib/supabase.ts (Build-Safe Configuration)
+```typescript
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+
+// Create a client with fallback values for build-time
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key',
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  }
+)
+
+// Export a function to check if Supabase is properly configured
+export const isSupabaseConfigured = () => {
+  return !!(supabaseUrl && supabaseAnonKey)
+}
+```
+
+### src/components/ui/theme-provider.tsx (Correct Import)
+```typescript
+"use client"
+
+import * as React from "react"
+import { ThemeProvider as NextThemesProvider } from "next-themes"
+import { type ThemeProviderProps } from "next-themes"
+
+export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
+  return <NextThemesProvider {...props}>{children}</NextThemesProvider>
+}
+```
+
+## Deployment Preparation
+
+### Step 27: Prepare for Vercel Deployment
+```powershell
+# Test build locally to ensure no errors
+pnpm run build
+
+# Verify environment variables are set up correctly
+# For production, add these to Vercel project settings:
+# NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+# NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 ## Component File Contents

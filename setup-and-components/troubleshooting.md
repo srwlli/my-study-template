@@ -160,7 +160,7 @@ Middleware conflicts with client-side navigation.
 ```typescript
 // Disable middleware, use client-side auth protection:
 // src/middleware.ts
-export function middleware(request: NextRequest) {
+export async function middleware() {
   return NextResponse.next() // Disabled
 }
 
