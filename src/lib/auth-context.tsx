@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
-import { supabase } from './supabase'
+import { supabase, isSupabaseConfigured } from './supabase'
 import type { AuthState } from '@/types/auth'
 
 const AuthContext = createContext<AuthState | undefined>(undefined)
@@ -12,6 +12,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Skip auth initialization if Supabase is not configured
+    if (!isSupabaseConfigured()) {
+      setLoading(false)
+      return
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
@@ -30,6 +36,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase is not configured')
+    }
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -38,6 +47,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string, fullName: string) => {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase is not configured')
+    }
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -51,11 +63,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase is not configured')
+    }
     const { error } = await supabase.auth.signOut()
     if (error) throw error
   }
 
   const resetPassword = async (email: string) => {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase is not configured')
+    }
     const { error } = await supabase.auth.resetPasswordForEmail(email)
     if (error) throw error
   }
